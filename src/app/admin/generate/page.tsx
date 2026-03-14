@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { GenerateForm } from "@/components/GenerateForm";
 
+export const dynamic = "force-dynamic";
+
 export default function AdminGeneratePage() {
 	if (process.env.READONLY_MODE) {
 		redirect("/");

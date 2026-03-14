@@ -19,5 +19,9 @@ public/generated/
 .cursor/
 .claude/
 .context/
+docs/
 *.md
 !README.md
+vitest.config.ts
+**/*.test.ts
+**/__tests__/
