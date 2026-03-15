@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { SchnitzelContent, CuratedPick, ImageOptions } from "@/types";
-import type { RecentTopic } from "@/lib/db/queries";
+import type { RecentTopic, RecentPrompt } from "@/lib/db/queries";
 import type { TextProvider, ImageProvider } from "../types";
 import {
 	SCHNITZEL_SYSTEM_PROMPT,
@@ -99,9 +99,12 @@ export class GoogleTextProvider implements TextProvider {
 	async craftImagePrompt(
 		theme: string,
 		tagline: string,
+		recentPrompts: RecentPrompt[],
 	): Promise<{ prompt: string; essence: string }> {
 		const client = getClient();
-		logger.info(`[Google PromptEngineer] Crafting image prompt with ${this.modelId}`);
+		logger.info(`[Google PromptEngineer] Crafting image prompt with ${this.modelId}`, {
+			recentPrompts: recentPrompts.length,
+		});
 
 		const model = client.getGenerativeModel({
 			model: this.modelId,
@@ -109,7 +112,7 @@ export class GoogleTextProvider implements TextProvider {
 			systemInstruction: PROMPT_ENGINEER_SYSTEM_PROMPT,
 		});
 
-		const result = await model.generateContent(buildPromptEngineerInput(theme, tagline));
+		const result = await model.generateContent(buildPromptEngineerInput(theme, tagline, recentPrompts));
 		const raw = result.response.text()?.trim();
 		if (!raw) throw new Error("Google prompt engineer returned empty response");
 

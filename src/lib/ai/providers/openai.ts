@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { SchnitzelContent, CuratedPick, ImageOptions } from "@/types";
-import type { RecentTopic } from "@/lib/db/queries";
+import type { RecentTopic, RecentPrompt } from "@/lib/db/queries";
 import type { TextProvider, ImageProvider } from "../types";
 import {
 	SCHNITZEL_SYSTEM_PROMPT,
@@ -110,15 +110,18 @@ export class OpenAITextProvider implements TextProvider {
 	async craftImagePrompt(
 		theme: string,
 		tagline: string,
+		recentPrompts: RecentPrompt[],
 	): Promise<{ prompt: string; essence: string }> {
 		const client = getClient();
-		logger.info(`[OpenAI PromptEngineer] Crafting image prompt with ${this.modelId}`);
+		logger.info(`[OpenAI PromptEngineer] Crafting image prompt with ${this.modelId}`, {
+			recentPrompts: recentPrompts.length,
+		});
 
 		const response = await client.chat.completions.create({
 			model: this.modelId,
 			messages: [
 				{ role: "system", content: PROMPT_ENGINEER_SYSTEM_PROMPT },
-				{ role: "user", content: buildPromptEngineerInput(theme, tagline) },
+				{ role: "user", content: buildPromptEngineerInput(theme, tagline, recentPrompts) },
 			],
 			response_format: { type: "json_object" },
 			temperature: 0.8,

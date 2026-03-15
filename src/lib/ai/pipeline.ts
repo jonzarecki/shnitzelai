@@ -1,5 +1,5 @@
 import type { Generation, NewsInput, CuratedPick } from "@/types";
-import { insertNewsItem, insertGeneration, getRecentTopics } from "@/lib/db/queries";
+import { insertNewsItem, insertGeneration, getRecentTopics, getRecentPrompts } from "@/lib/db/queries";
 import { createTextProvider, createImageProvider, type ResolvedConfig } from "./registry";
 import {
 	CURATOR_SYSTEM_PROMPT,
@@ -73,7 +73,10 @@ export async function runPreview(
 		tagline: curated.tagline,
 	});
 
-	const promptInput = buildPromptEngineerInput(curated.theme, curated.tagline);
+	const recentPrompts = getRecentPrompts(7);
+	logger.info("[Pipeline] Loaded recent prompts for variation", { count: recentPrompts.length });
+
+	const promptInput = buildPromptEngineerInput(curated.theme, curated.tagline, recentPrompts);
 	runLog.logPromptInput(PROMPT_ENGINEER_SYSTEM_PROMPT, promptInput);
 
 	const promptEngineer = createTextProvider(config.promptEngineerProvider, config.promptEngineerModel);
@@ -81,7 +84,7 @@ export async function runPreview(
 	const step2Start = Date.now();
 	let promptResult: { prompt: string; essence: string };
 	try {
-		promptResult = await promptEngineer.craftImagePrompt(curated.theme, curated.tagline);
+		promptResult = await promptEngineer.craftImagePrompt(curated.theme, curated.tagline, recentPrompts);
 	} catch (err) {
 		runLog.finalize({
 			status: "error",

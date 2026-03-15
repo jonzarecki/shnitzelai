@@ -1,5 +1,5 @@
 import type { ImageOptions, SchnitzelContent, CuratedPick } from "@/types";
-import type { RecentTopic } from "@/lib/db/queries";
+import type { RecentTopic, RecentPrompt } from "@/lib/db/queries";
 
 export interface TextProvider {
 	readonly providerId: string;
@@ -15,6 +15,7 @@ export interface TextProvider {
 	craftImagePrompt(
 		theme: string,
 		tagline: string,
+		recentPrompts: RecentPrompt[],
 	): Promise<{ prompt: string; essence: string }>;
 }
 

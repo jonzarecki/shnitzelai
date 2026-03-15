@@ -14,18 +14,23 @@
 - Consider non-OpenAI models — OpenAI are not necessarily better. The architecture supports multiple providers (OpenAI, Google, BFL/Flux).
 - Logging infrastructure should be file-based and agent-queryable (directory-per-run with JSON/text files), not database-based.
 - Meta-instructions in image prompts are fine (compositional intent like "the framing should feel tense"). Don't strip them.
+- Remote deployment must be read-only — all content generation happens locally, remote only serves. Strip internal details (prompts, model config) from public APIs.
+- Deploy speed matters. Use immediate deploy strategy and lightweight health checks.
+- Security-audit all public endpoints before going live. Never expose prompt text or AI provider details to the public.
 
 ## Learned Workspace Facts
 
 - Pipeline is 3 steps: curator (picks theme + writes tagline) → prompt engineer (crafts image prompt) → image generation.
 - Default models: gpt-5.4 for curator, gpt-5.4 for prompt engineer, gpt-image-1.5 for images.
+- Prompt engineer receives previous days' final prompts as context to avoid repetition and build on established style.
 - Run logs stored in `logs/runs/<timestamp>_<ulid>/` with per-step files (headlines, curator I/O, prompt I/O, image meta, image copy).
-- Admin page at `/admin/generate` uses a 2-phase flow: preview (cheap LLM calls) → confirm (image generation).
+- Admin page at `/admin/generate` uses a 2-phase flow: preview (cheap LLM calls) → confirm (image generation). Redirects to `/` on remote (READONLY_MODE).
 - RSS fetches ALL headlines from Google News Hebrew feed — no filtering or dedup before curation. The curator sees the full picture.
 - SQLite DB (`shnitzel.db`) with `news_items` and `generations` tables. No direct DB access outside `src/lib/db/`.
-- Cron runs daily at 9am (`croner` package, initialized via Next.js `instrumentation.ts`).
+- Cron runs daily at 9am (`croner` package, initialized via Next.js `instrumentation.ts`). Disabled on remote via READONLY_MODE.
 - Tagline is Hebrew (max 8 words, news-first). Theme and reasoning are English (feed into prompt engineer).
 - Image style: editorial illustration with real-world signifiers + one subtle schnitzel element. Style prefix injected automatically at image gen time.
-- Deployment is local/VPS for now (SQLite needs persistent filesystem). Vercel migration is a follow-up.
+- Deployed to Fly.io (app `shnitzelai`, region `iad`). Persistent volume at `/data` for DB + images. READONLY_MODE disables generation, cron, and admin on remote.
+- Sync workflow: generate locally → `pnpm sync:all` pushes DB + images to Fly volume → restart machine. Public `/api/news` strips `prompt_used` and model fields.
 - Feed page at `/` is a server component reading directly from DB. Dark theme, RTL Hebrew, Heebo font.
 - Authors: Jonathan Zarecki, Matan Kalp, Yoav Halperin.

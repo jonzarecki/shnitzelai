@@ -92,6 +92,29 @@ export interface RecentTopic {
 	created_at: string;
 }
 
+export interface RecentPrompt {
+	prompt_used: string;
+	created_at: string;
+}
+
+/** Get the last image prompt per day for the past N days. */
+export function getRecentPrompts(days = 7): RecentPrompt[] {
+	const db = getDb();
+	const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+	return db.prepare(`
+    SELECT prompt_used, created_at
+    FROM generations
+    WHERE created_at > ?
+    AND id IN (
+      SELECT MAX(id) FROM generations
+      WHERE created_at > ?
+      GROUP BY DATE(created_at)
+    )
+    ORDER BY created_at DESC
+  `).all(cutoff, cutoff) as RecentPrompt[];
+}
+
 export function getRecentTopics(days = 7): RecentTopic[] {
 	const db = getDb();
 	const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();

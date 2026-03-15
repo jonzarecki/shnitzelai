@@ -56,22 +56,26 @@ Before writing the prompt, ask yourself: "If someone saw this image without any 
 - The relevant OBJECTS: specific weapons, vehicles, documents, infrastructure from the story
 
 WHAT A SCHNITZEL LOOKS LIKE — be precise in your prompt:
-A schnitzel (Israeli-style) is a thin, flat, anything-shaped piece of chicken breast, pounded thin, coated in golden-brown breadcrumbs, and pan-fried until crispy. The surface has a distinctive bumpy, craggy breadcrumb texture — not smooth like a nugget. The color is warm golden-brown, slightly uneven. It often has a small piece of lemon on the side or is sitting in a pan. It's flat like a piece of paper, not puffy or round. You can change the SHAPE of the schnitzel contextually (shaped like a country, a missile, a ship, a map) while keeping it flat and keeping all other core properties (breadcrumbed, golden-brown, crispy, thin).
+A schnitzel (Israeli-style) is a thin, flat, anything-shaped piece of chicken breast, pounded thin, coated in golden-brown breadcrumbs, and pan-fried until crispy. The surface has a distinctive bumpy, craggy breadcrumb texture — not smooth like a nugget. The color is warm golden-brown, slightly uneven. It often has a small piece of lemon on the side or is sitting in a pan. It's flat like a piece of paper, not puffy or round. You can change the SHAPE of the schnitzel contextually (shaped like a country, a missile, a ship, a flag) while keeping it flat and keeping all other core properties (breadcrumbed, golden-brown, crispy, thin).
+
+COLOR: The schnitzel should be PRIMARILY golden-brown with visible breadcrumb texture — that's what makes it read as "schnitzel." It can pick up hints or tints from its context (a slight greenish cast if it's replacing a flag, warm tones from surrounding light) but the dominant color must be golden-brown breadcrumb, not the full colors of the replaced object. If it becomes fully green-white-red, it's a textured flag, not a schnitzel.
+
+HOW TO PLACE THE SCHNITZEL — visual substitution:
+The core technique is VISUAL SUBSTITUTION: find one object in the scene that could be replaced by a schnitzel of the same shape and role, so it looks like it physically belongs but is semantically absurd. The schnitzel must match the scene's lighting, scale, and perspective — as if it were photographed there.
+
+Principles:
+- SUBSTITUTE, don't accessorize. The schnitzel REPLACES something in the scene. It doesn't sit on a plate next to the action like a prop. It takes the place of an object that was already there.
+- MATCH THE SHAPE CONTEXT. Since schnitzels are flat, they work best replacing other flat things: maps, documents, portraits, flags, screens, posters, shadows, silhouettes, land masses seen from above. But they can also replace any object if reshaped to fit — a schnitzel-shaped missile, a schnitzel cut to a person's profile.
+- ONE substitution per image. Not two, not three. One moment of "wait, is that a schnitzel?" that rewards a second look.
+- VARY the technique across images. Track what you've done before (the recent history shows previous approaches). Don't repeat the same substitution type two days in a row.
 
 VISUAL LANGUAGE:
 - Real recognizable faces and figures — depict them as themselves, not as schnitzels
 - Faction flags, insignia, colors woven into composition
 - Specific real-world locations, landmarks, geography
 - Military/civilian imagery that grounds the scene in reality
-- The schnitzel appears as ONE subtle element: hidden among missiles, served at a negotiation table, shaped like a country on a war-room map, tucked into cargo
 
-FOR NON-GEOPOLITICAL TOPICS, adapt the same principle:
-- Sports: real athletes/teams, stadiums, trophies — schnitzel as the ball, the prize, the field
-- Tech: real products, logos, screens — schnitzel as the chip, the device, the interface
-- Culture: real celebrities, red carpets, stages — schnitzel as the award, the outfit, the performance
-- Economy: stock charts, currencies, buildings — schnitzel as the currency, the graph line, the commodity
-
-THE RULE: Real world + one absurd schnitzel element = editorial humor. The viewer should recognize the real news story IMMEDIATELY, then notice the schnitzel twist.
+THE RULE: Real world + one visual substitution with a schnitzel = editorial humor. The viewer should recognize the real news story IMMEDIATELY, then notice the schnitzel twist on second look.
 
 TONE: This is for ADULTS. The images should feel like something you'd see in a sharp political magazine or a late-night comedy show's cold open — not a children's book or a cartoon channel. Think:
 - Understated, dry visual wit — not wacky or zany
@@ -82,16 +86,22 @@ TONE: This is for ADULTS. The images should feel like something you'd see in a s
 STYLE (already baked in — do NOT repeat these words in the prompt):
 The image model will receive these style cues automatically: "editorial illustration, photorealistic detail, dramatic cinematic lighting, muted desaturated palette, magazine cover composition." You do NOT need to write them. Focus your prompt ONLY on describing the SCENE.
 
-PROMPT FORMAT — your output prompt must be:
-- Describe the scene: subject, action, setting, key objects, camera angle, lighting direction.
-- You CAN include compositional intent ("the composition should feel tense", "the framing emphasizes the contrast between civilian life and hidden weapons") — image models respond well to this.
-- Under 120 words. Shorter prompts produce sharper images.
+COMPOSITION RULES:
+- ONE SCENE, ONE CAMERA. Never split the frame into two separate scenes or side-by-side panels. Pick one moment, one viewpoint.
+- SUBJECT FIRST. Start the prompt with the main subject and their action. Scene/setting details come after.
+- TRUST THE MODEL'S KNOWLEDGE. Say "White House press room" not "a room with blue curtains, a podium, the presidential seal on the wall..." The model knows what these places look like. Save words for what matters.
+- USE PHOTOGRAPHY LANGUAGE. Describe as if directing a photographer: "shot with an 85mm lens at eye level, shallow depth of field, warm side-light from the left." This steers results more reliably than abstract terms like "medium-wide composition."
+
+PROMPT FORMAT:
+- Structure: subject + action → setting → the schnitzel substitution → camera/lens/lighting
+- You CAN include compositional intent ("the framing emphasizes the absurd contrast") — image models respond well to this.
 - No negations ("no cartoon", "avoid slapstick"). Only describe what IS in the image.
-- Specify: subject, action, setting, key objects, camera angle, lighting direction.
+- ONLY include scene elements directly related to the theme and tagline. Don't invent locations or details not in the news story.
+- Focus on what matters. Every word should earn its place.
 
 Respond in JSON:
 {
-  "prompt": "the scene description (under 120 words)",
+  "prompt": "the scene description",
   "essence": "2-3 sentence plain-language description for a human to review before generating"
 }`;
 
@@ -154,6 +164,23 @@ export function buildCuratorPrompt(
 export function buildPromptEngineerInput(
 	theme: string,
 	tagline: string,
+	recentPrompts: { prompt_used: string; created_at: string }[],
 ): string {
-	return `News theme: ${theme}\nHebrew tagline: ${tagline}\n\nCraft the editorial image prompt.`;
+	const parts: string[] = [];
+
+	if (recentPrompts.length > 0) {
+		parts.push("=== PREVIOUS DAYS' IMAGE PROMPTS (don't repeat the same schnitzel placement) ===");
+		for (const p of recentPrompts) {
+			const day = new Date(p.created_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			parts.push(`[${day}]: ${p.prompt_used}`);
+		}
+		parts.push("");
+	}
+
+	parts.push(`News theme: ${theme}`);
+	parts.push(`Hebrew tagline: ${tagline}`);
+	parts.push("");
+	parts.push("Craft the editorial image prompt. Use a DIFFERENT schnitzel substitution technique than the previous days.");
+
+	return parts.join("\n");
 }
