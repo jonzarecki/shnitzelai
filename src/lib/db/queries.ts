@@ -1,14 +1,12 @@
 import { monotonicFactory } from "ulid";
 
 const ulid = monotonicFactory();
-import type {
-	Generation,
-	GenerationWithNewsItem,
-	NewsItem,
-} from "@/types";
+import type { Generation, GenerationWithNewsItem, NewsItem } from "@/types";
 import { getDb } from "./index";
 
-export function insertNewsItem(item: Omit<NewsItem, "id" | "created_at">): NewsItem {
+export function insertNewsItem(
+	item: Omit<NewsItem, "id" | "created_at">,
+): NewsItem {
 	const db = getDb();
 	const id = ulid();
 	const created_at = new Date().toISOString();
@@ -16,12 +14,22 @@ export function insertNewsItem(item: Omit<NewsItem, "id" | "created_at">): NewsI
 	db.prepare(`
     INSERT INTO news_items (id, original_headline, original_summary, original_source, original_url, category, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, item.original_headline, item.original_summary, item.original_source, item.original_url, item.category, created_at);
+  `).run(
+		id,
+		item.original_headline,
+		item.original_summary,
+		item.original_source,
+		item.original_url,
+		item.category,
+		created_at,
+	);
 
 	return { id, ...item, created_at };
 }
 
-export function insertGeneration(gen: Omit<Generation, "id" | "created_at">): Generation {
+export function insertGeneration(
+	gen: Omit<Generation, "id" | "created_at">,
+): Generation {
 	const db = getDb();
 	const id = ulid();
 	const created_at = new Date().toISOString();
@@ -47,14 +55,12 @@ export function insertGeneration(gen: Omit<Generation, "id" | "created_at">): Ge
 	return { id, ...gen, created_at };
 }
 
-export function getGenerations(
-	page = 1,
-	limit = 20,
-): GenerationWithNewsItem[] {
+export function getGenerations(page = 1, limit = 20): GenerationWithNewsItem[] {
 	const db = getDb();
 	const offset = (page - 1) * limit;
 
-	return db.prepare(`
+	return db
+		.prepare(`
     SELECT
       g.*,
       n.original_headline,
@@ -67,23 +73,30 @@ export function getGenerations(
     JOIN news_items n ON g.news_item_id = n.id
     ORDER BY g.id DESC
     LIMIT ? OFFSET ?
-  `).all(limit, offset) as GenerationWithNewsItem[];
+  `)
+		.all(limit, offset) as GenerationWithNewsItem[];
 }
 
 export function getGenerationCount(): number {
 	const db = getDb();
-	const row = db.prepare("SELECT COUNT(*) AS count FROM generations").get() as { count: number };
+	const row = db.prepare("SELECT COUNT(*) AS count FROM generations").get() as {
+		count: number;
+	};
 	return row.count;
 }
 
 export function getNewsItemById(id: string): NewsItem | undefined {
 	const db = getDb();
-	return db.prepare("SELECT * FROM news_items WHERE id = ?").get(id) as NewsItem | undefined;
+	return db.prepare("SELECT * FROM news_items WHERE id = ?").get(id) as
+		| NewsItem
+		| undefined;
 }
 
 export function getNewsItemByHeadline(headline: string): NewsItem | undefined {
 	const db = getDb();
-	return db.prepare("SELECT * FROM news_items WHERE original_headline = ?").get(headline) as NewsItem | undefined;
+	return db
+		.prepare("SELECT * FROM news_items WHERE original_headline = ?")
+		.get(headline) as NewsItem | undefined;
 }
 
 export interface RecentTopic {
@@ -100,9 +113,12 @@ export interface RecentPrompt {
 /** Get the last image prompt per day for the past N days. */
 export function getRecentPrompts(days = 7): RecentPrompt[] {
 	const db = getDb();
-	const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+	const cutoff = new Date(
+		Date.now() - days * 24 * 60 * 60 * 1000,
+	).toISOString();
 
-	return db.prepare(`
+	return db
+		.prepare(`
     SELECT prompt_used, created_at
     FROM generations
     WHERE created_at > ?
@@ -112,14 +128,47 @@ export function getRecentPrompts(days = 7): RecentPrompt[] {
       GROUP BY DATE(created_at)
     )
     ORDER BY created_at DESC
-  `).all(cutoff, cutoff) as RecentPrompt[];
+  `)
+		.all(cutoff, cutoff) as RecentPrompt[];
+}
+
+export function getGenerationById(
+	id: string,
+): GenerationWithNewsItem | undefined {
+	const db = getDb();
+	return db
+		.prepare(`
+    SELECT
+      g.*,
+      n.original_headline,
+      n.original_summary,
+      n.original_source,
+      n.original_url,
+      n.category,
+      n.created_at AS news_created_at
+    FROM generations g
+    JOIN news_items n ON g.news_item_id = n.id
+    WHERE g.id = ?
+  `)
+		.get(id) as GenerationWithNewsItem | undefined;
+}
+
+export function updateTweetId(generationId: string, tweetId: string): void {
+	const db = getDb();
+	db.prepare("UPDATE generations SET tweet_id = ? WHERE id = ?").run(
+		tweetId,
+		generationId,
+	);
 }
 
 export function getRecentTopics(days = 7): RecentTopic[] {
 	const db = getDb();
-	const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+	const cutoff = new Date(
+		Date.now() - days * 24 * 60 * 60 * 1000,
+	).toISOString();
 
-	return db.prepare(`
+	return db
+		.prepare(`
     SELECT
       g.schnitzel_headline,
       n.original_headline,
@@ -128,5 +177,6 @@ export function getRecentTopics(days = 7): RecentTopic[] {
     JOIN news_items n ON g.news_item_id = n.id
     WHERE g.created_at > ?
     ORDER BY g.created_at DESC
-  `).all(cutoff) as RecentTopic[];
+  `)
+		.all(cutoff) as RecentTopic[];
 }

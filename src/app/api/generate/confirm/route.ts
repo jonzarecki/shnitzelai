@@ -1,23 +1,32 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import type { CuratedPick, NewsInput } from "@/types";
-import { runGenerate, type PreviewResult } from "@/lib/ai/pipeline";
+import { type PreviewResult, runGenerate } from "@/lib/ai/pipeline";
 import { getDefaultConfig } from "@/lib/ai/registry";
 import { logger } from "@/lib/logger";
+import type { CuratedPick, NewsInput } from "@/types";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 interface ConfirmBody {
 	curate: CuratedPick;
 	imagePrompt: string;
 	essence: string;
-	headlines: { headline: string; summary: string; source: string; url: string; category: string }[];
+	headlines: {
+		headline: string;
+		summary: string;
+		source: string;
+		url: string;
+		category: string;
+	}[];
 	recentTopicsCount: number;
 	runLogId: string;
 	runLogDir: string;
 }
 
 export async function POST(request: NextRequest) {
-	if (process.env.READONLY_MODE) {
-		return NextResponse.json({ error: "Generation disabled in readonly mode" }, { status: 403 });
+	if (process.env.DISABLE_ADMIN) {
+		return NextResponse.json(
+			{ error: "Admin disabled on this instance" },
+			{ status: 403 },
+		);
 	}
 	try {
 		const body = (await request.json()) as ConfirmBody;

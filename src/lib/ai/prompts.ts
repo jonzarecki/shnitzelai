@@ -65,7 +65,8 @@ The core technique is VISUAL SUBSTITUTION: find one object in the scene that cou
 
 Principles:
 - SUBSTITUTE, don't accessorize. The schnitzel REPLACES something in the scene. It doesn't sit on a plate next to the action like a prop. It takes the place of an object that was already there.
-- MATCH THE SHAPE CONTEXT. Since schnitzels are flat, they work best replacing other flat things: maps, documents, portraits, flags, screens, posters, shadows, silhouettes, land masses seen from above. But they can also replace any object if reshaped to fit — a schnitzel-shaped missile, a schnitzel cut to a person's profile.
+- DOUBLE-TAKE TEST. At first glance the schnitzel should look like it COULD be the original object. If someone has to ask "why is there food in a military crate?" the placement is wrong. Good: a schnitzel replacing a country on a map (same shape, same flatness — you almost read it as the map). Bad: a schnitzel inside an ammo box replacing a missile (nothing about a schnitzel looks like a missile — it's just random food in a box).
+- MATCH THE SHAPE CONTEXT. Since schnitzels are flat, they work best replacing other flat things: maps, documents, portraits, flags, screens, posters, shadows, silhouettes, land masses seen from above, graph bars, photos on a wall.
 - ONE substitution per image. Not two, not three. One moment of "wait, is that a schnitzel?" that rewards a second look.
 - VARY the technique across images. Track what you've done before (the recent history shows previous approaches). Don't repeat the same substitution type two days in a row.
 
@@ -143,10 +144,18 @@ export function buildCuratorPrompt(
 	if (recentTopics.length > 0) {
 		parts.push("=== SCHNITZELS YOU ALREADY MADE THIS WEEK ===");
 		for (const topic of recentTopics) {
-			const day = new Date(topic.created_at).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
-			parts.push(`• [${day}] "${topic.schnitzel_headline}" (original: ${topic.original_headline})`);
+			const day = new Date(topic.created_at).toLocaleDateString("he-IL", {
+				weekday: "long",
+				day: "numeric",
+				month: "numeric",
+			});
+			parts.push(
+				`• [${day}] "${topic.schnitzel_headline}" (original: ${topic.original_headline})`,
+			);
 		}
-		parts.push("\nDo NOT repeat the same theme or angle as any of the above.\n");
+		parts.push(
+			"\nDo NOT repeat the same theme or angle as any of the above.\n",
+		);
 	} else {
 		parts.push("(This is your first schnitzel — no history yet.)\n");
 	}
@@ -156,7 +165,9 @@ export function buildCuratorPrompt(
 		parts.push(`${i + 1}. [${headlines[i].source}] ${headlines[i].headline}`);
 	}
 
-	parts.push("\nIdentify the dominant theme across these headlines and generate today's schnitzel.");
+	parts.push(
+		"\nIdentify the dominant theme across these headlines and generate today's schnitzel.",
+	);
 
 	return parts.join("\n");
 }
@@ -169,9 +180,15 @@ export function buildPromptEngineerInput(
 	const parts: string[] = [];
 
 	if (recentPrompts.length > 0) {
-		parts.push("=== PREVIOUS DAYS' IMAGE PROMPTS (don't repeat the same schnitzel placement) ===");
+		parts.push(
+			"=== PREVIOUS DAYS' IMAGE PROMPTS (don't repeat the same schnitzel placement) ===",
+		);
 		for (const p of recentPrompts) {
-			const day = new Date(p.created_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+			const day = new Date(p.created_at).toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
 			parts.push(`[${day}]: ${p.prompt_used}`);
 		}
 		parts.push("");
@@ -180,7 +197,9 @@ export function buildPromptEngineerInput(
 	parts.push(`News theme: ${theme}`);
 	parts.push(`Hebrew tagline: ${tagline}`);
 	parts.push("");
-	parts.push("Craft the editorial image prompt. Use a DIFFERENT schnitzel substitution technique than the previous days.");
+	parts.push(
+		"Craft the editorial image prompt. Use a DIFFERENT schnitzel substitution technique than the previous days.",
+	);
 
 	return parts.join("\n");
 }

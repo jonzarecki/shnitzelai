@@ -1,12 +1,16 @@
-import { Cron } from "croner";
-import { fetchRssHeadlines } from "@/lib/news/fetcher";
 import { runCuratedPipeline } from "@/lib/ai/pipeline";
 import { getDefaultConfig } from "@/lib/ai/registry";
 import { logger } from "@/lib/logger";
+import { fetchRssHeadlines } from "@/lib/news/fetcher";
+import { isTwitterConfigured, postToTwitter } from "@/lib/twitter/client";
+import { Cron } from "croner";
 
 const DEFAULT_SCHEDULE = "0 9 * * *";
 
-export async function runCronGeneration(): Promise<{ success: boolean; error?: string }> {
+export async function runCronGeneration(): Promise<{
+	success: boolean;
+	error?: string;
+}> {
 	const timestamp = new Date().toISOString();
 	logger.info("[Cron] Starting daily schnitzel generation", { timestamp });
 
@@ -25,6 +29,21 @@ export async function runCronGeneration(): Promise<{ success: boolean; error?: s
 			tagline: preview.curate.tagline,
 			generationId: result.generation.id,
 		});
+
+		if (isTwitterConfigured()) {
+			try {
+				const tweet = await postToTwitter(result.generation.id);
+				logger.info("[Cron] Auto-posted to Twitter", {
+					tweetUrl: tweet.tweetUrl,
+				});
+			} catch (tweetErr) {
+				const tweetMsg =
+					tweetErr instanceof Error ? tweetErr.message : String(tweetErr);
+				logger.warn("[Cron] Twitter post failed (generation saved)", {
+					error: tweetMsg,
+				});
+			}
+		}
 
 		return { success: true };
 	} catch (err) {

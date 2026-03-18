@@ -13,9 +13,7 @@ export function NewsFeed({ items }: NewsFeedProps) {
 				<h2 className="mt-6 text-2xl font-bold text-stone-300">
 					עדיין אין שניצלים כאן
 				</h2>
-				<p className="mt-2 text-stone-500">
-					השניצלים עוד בטיגון. חזרו בקרוב!
-				</p>
+				<p className="mt-2 text-stone-500">השניצלים עוד בטיגון. חזרו בקרוב!</p>
 			</div>
 		);
 	}

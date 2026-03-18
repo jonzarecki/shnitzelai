@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
-import { setDb, closeDb } from "../index";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { closeDb, setDb } from "../index";
 import {
-	insertNewsItem,
-	insertGeneration,
-	getGenerations,
+	getGenerationById,
 	getGenerationCount,
-	getNewsItemById,
+	getGenerations,
 	getNewsItemByHeadline,
+	getNewsItemById,
+	insertGeneration,
+	insertNewsItem,
+	updateTweetId,
 } from "../queries";
 
 beforeEach(() => {
@@ -217,5 +219,72 @@ describe("getNewsItemByHeadline", () => {
 
 	it("returns undefined for missing headline", () => {
 		expect(getNewsItemByHeadline("does not exist")).toBeUndefined();
+	});
+});
+
+describe("getGenerationById", () => {
+	it("returns generation with news item data", () => {
+		const newsItem = insertNewsItem({
+			original_headline: "Test headline",
+			original_summary: "Test summary",
+			original_source: "Reuters",
+			original_url: "https://reuters.com/123",
+			category: "politics",
+		});
+
+		const gen = insertGeneration({
+			news_item_id: newsItem.id,
+			image_path: "/generated/test.png",
+			schnitzel_headline: "שניצל טסט",
+			caption: "",
+			prompt_used: "test prompt",
+			text_provider: "openai",
+			text_model: "gpt-4.1-mini",
+			image_provider: "openai",
+			image_model: "gpt-image-1.5",
+			image_quality: "medium",
+		});
+
+		const found = getGenerationById(gen.id);
+		expect(found).toBeDefined();
+		expect(found?.schnitzel_headline).toBe("שניצל טסט");
+		expect(found?.original_headline).toBe("Test headline");
+		expect(found?.original_url).toBe("https://reuters.com/123");
+	});
+
+	it("returns undefined for missing id", () => {
+		expect(getGenerationById("nonexistent")).toBeUndefined();
+	});
+});
+
+describe("updateTweetId", () => {
+	it("sets tweet_id on an existing generation", () => {
+		const newsItem = insertNewsItem({
+			original_headline: "Tweet test",
+			original_summary: "",
+			original_source: "",
+			original_url: "",
+			category: "general",
+		});
+
+		const gen = insertGeneration({
+			news_item_id: newsItem.id,
+			image_path: "/generated/tweet.png",
+			schnitzel_headline: "שניצל ציוץ",
+			caption: "",
+			prompt_used: "tweet prompt",
+			text_provider: "openai",
+			text_model: "gpt-4.1-mini",
+			image_provider: "openai",
+			image_model: "gpt-image-1.5",
+			image_quality: "medium",
+		});
+
+		expect(getGenerationById(gen.id)?.tweet_id).toBeNull();
+
+		updateTweetId(gen.id, "1234567890");
+
+		const updated = getGenerationById(gen.id);
+		expect(updated?.tweet_id).toBe("1234567890");
 	});
 });

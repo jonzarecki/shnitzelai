@@ -1,16 +1,16 @@
+import type { RecentPrompt, RecentTopic } from "@/lib/db/queries";
+import { logger } from "@/lib/logger";
+import type { CuratedPick, ImageOptions, SchnitzelContent } from "@/types";
 import OpenAI from "openai";
-import type { SchnitzelContent, CuratedPick, ImageOptions } from "@/types";
-import type { RecentTopic, RecentPrompt } from "@/lib/db/queries";
-import type { TextProvider, ImageProvider } from "../types";
 import {
-	SCHNITZEL_SYSTEM_PROMPT,
 	CURATOR_SYSTEM_PROMPT,
 	PROMPT_ENGINEER_SYSTEM_PROMPT,
-	buildUserPrompt,
+	SCHNITZEL_SYSTEM_PROMPT,
 	buildCuratorPrompt,
 	buildPromptEngineerInput,
+	buildUserPrompt,
 } from "../prompts";
-import { logger } from "@/lib/logger";
+import type { ImageProvider, TextProvider } from "../types";
 
 let _client: OpenAI | null = null;
 
@@ -69,9 +69,12 @@ export class OpenAITextProvider implements TextProvider {
 		recentTopics: RecentTopic[],
 	): Promise<CuratedPick> {
 		const client = getClient();
-		logger.info(`[OpenAI Curator] Curating ${headlines.length} headlines with ${this.modelId}`, {
-			recentTopics: recentTopics.length,
-		});
+		logger.info(
+			`[OpenAI Curator] Curating ${headlines.length} headlines with ${this.modelId}`,
+			{
+				recentTopics: recentTopics.length,
+			},
+		);
 
 		const response = await client.chat.completions.create({
 			model: this.modelId,
@@ -86,12 +89,17 @@ export class OpenAITextProvider implements TextProvider {
 		const raw = response.choices[0]?.message?.content;
 		if (!raw) throw new Error("OpenAI curator returned empty response");
 
-		const parsed = JSON.parse(raw) as CuratedPick & { hebrewHeadline?: string; caption?: string };
+		const parsed = JSON.parse(raw) as CuratedPick & {
+			hebrewHeadline?: string;
+			caption?: string;
+		};
 		const tagline = parsed.tagline ?? parsed.hebrewHeadline ?? "";
 		const theme = parsed.theme ?? "";
 
 		if (!tagline || !theme) {
-			throw new Error(`OpenAI curator response missing required fields: ${raw}`);
+			throw new Error(
+				`OpenAI curator response missing required fields: ${raw}`,
+			);
 		}
 
 		logger.info("[OpenAI Curator] Identified theme", {
@@ -113,15 +121,21 @@ export class OpenAITextProvider implements TextProvider {
 		recentPrompts: RecentPrompt[],
 	): Promise<{ prompt: string; essence: string }> {
 		const client = getClient();
-		logger.info(`[OpenAI PromptEngineer] Crafting image prompt with ${this.modelId}`, {
-			recentPrompts: recentPrompts.length,
-		});
+		logger.info(
+			`[OpenAI PromptEngineer] Crafting image prompt with ${this.modelId}`,
+			{
+				recentPrompts: recentPrompts.length,
+			},
+		);
 
 		const response = await client.chat.completions.create({
 			model: this.modelId,
 			messages: [
 				{ role: "system", content: PROMPT_ENGINEER_SYSTEM_PROMPT },
-				{ role: "user", content: buildPromptEngineerInput(theme, tagline, recentPrompts) },
+				{
+					role: "user",
+					content: buildPromptEngineerInput(theme, tagline, recentPrompts),
+				},
 			],
 			response_format: { type: "json_object" },
 			temperature: 0.8,
@@ -131,9 +145,12 @@ export class OpenAITextProvider implements TextProvider {
 		if (!raw) throw new Error("OpenAI prompt engineer returned empty response");
 
 		const parsed = JSON.parse(raw) as { prompt: string; essence: string };
-		if (!parsed.prompt) throw new Error(`Prompt engineer missing 'prompt' field: ${raw}`);
+		if (!parsed.prompt)
+			throw new Error(`Prompt engineer missing 'prompt' field: ${raw}`);
 
-		logger.info("[OpenAI PromptEngineer] Crafted prompt", { length: parsed.prompt.length });
+		logger.info("[OpenAI PromptEngineer] Crafted prompt", {
+			length: parsed.prompt.length,
+		});
 		return { prompt: parsed.prompt, essence: parsed.essence ?? "" };
 	}
 }
@@ -152,10 +169,7 @@ export class OpenAIImageProvider implements ImageProvider {
 		this.modelId = modelId;
 	}
 
-	async generateImage(
-		prompt: string,
-		options?: ImageOptions,
-	): Promise<Buffer> {
+	async generateImage(prompt: string, options?: ImageOptions): Promise<Buffer> {
 		const client = getClient();
 		const quality = QUALITY_MAP[options?.quality ?? "medium"] ?? "medium";
 

@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { monotonicFactory } from "ulid";
 import type { ResolvedConfig } from "@/lib/ai/registry";
-import type { NewsInput, CuratedPick } from "@/types";
 import type { RecentTopic } from "@/lib/db/queries";
+import type { CuratedPick, NewsInput } from "@/types";
+import { monotonicFactory } from "ulid";
 
 const ulid = monotonicFactory();
 
-const LOGS_DIR = path.join(process.cwd(), "logs");
+const LOGS_DIR = process.env.LOGS_DIR ?? path.join(process.cwd(), "logs");
 const RUNS_DIR = path.join(LOGS_DIR, "runs");
 const INDEX_PATH = path.join(LOGS_DIR, "index.jsonl");
 
@@ -52,7 +52,10 @@ function ensureDir(dir: string): void {
 }
 
 function safeTimestamp(): string {
-	return new Date().toISOString().replace(/:/g, "-").replace(/\.\d+Z$/, "");
+	return new Date()
+		.toISOString()
+		.replace(/:/g, "-")
+		.replace(/\.\d+Z$/, "");
 }
 
 export class RunLogger {
@@ -60,7 +63,11 @@ export class RunLogger {
 	readonly runDir: string;
 	readonly stepsDir: string;
 	readonly startedAt: number;
-	private stepTimings: { step1CurateMs: number; step2PromptMs: number; step3ImageMs: number } = {
+	private stepTimings: {
+		step1CurateMs: number;
+		step2PromptMs: number;
+		step3ImageMs: number;
+	} = {
 		step1CurateMs: 0,
 		step2PromptMs: 0,
 		step3ImageMs: 0,
@@ -86,14 +93,21 @@ export class RunLogger {
 			fetchedAt: new Date().toISOString(),
 			headlinesCount: headlines.length,
 			recentTopicsCount: recentTopics.length,
-			headlines: headlines.map((h) => ({ headline: h.headline, source: h.source, url: h.url })),
+			headlines: headlines.map((h) => ({
+				headline: h.headline,
+				source: h.source,
+				url: h.url,
+			})),
 			recentTopics: recentTopics.map((t) => ({
 				schnitzelHeadline: t.schnitzel_headline,
 				originalHeadline: t.original_headline,
 				date: t.created_at,
 			})),
 		};
-		fs.writeFileSync(path.join(this.stepsDir, "0_headlines.json"), JSON.stringify(data, null, 2));
+		fs.writeFileSync(
+			path.join(this.stepsDir, "0_headlines.json"),
+			JSON.stringify(data, null, 2),
+		);
 	}
 
 	logCurateInput(systemPrompt: string, userPrompt: string): void {
@@ -104,7 +118,10 @@ export class RunLogger {
 	logCurateOutput(curated: CuratedPick, durationMs: number): void {
 		this.stepTimings.step1CurateMs = durationMs;
 		const data = { ...curated, durationMs };
-		fs.writeFileSync(path.join(this.stepsDir, "1_curate_output.json"), JSON.stringify(data, null, 2));
+		fs.writeFileSync(
+			path.join(this.stepsDir, "1_curate_output.json"),
+			JSON.stringify(data, null, 2),
+		);
 	}
 
 	logPromptInput(systemPrompt: string, userPrompt: string): void {
@@ -114,12 +131,23 @@ export class RunLogger {
 
 	logPromptOutput(imagePrompt: string, durationMs: number): void {
 		this.stepTimings.step2PromptMs = durationMs;
-		fs.writeFileSync(path.join(this.stepsDir, "2_prompt_output.txt"), imagePrompt);
+		fs.writeFileSync(
+			path.join(this.stepsDir, "2_prompt_output.txt"),
+			imagePrompt,
+		);
 	}
 
-	logImageMeta(meta: { model: string; quality: string; durationMs: number; fileSizeBytes: number }): void {
+	logImageMeta(meta: {
+		model: string;
+		quality: string;
+		durationMs: number;
+		fileSizeBytes: number;
+	}): void {
 		this.stepTimings.step3ImageMs = meta.durationMs;
-		fs.writeFileSync(path.join(this.stepsDir, "3_image_meta.json"), JSON.stringify(meta, null, 2));
+		fs.writeFileSync(
+			path.join(this.stepsDir, "3_image_meta.json"),
+			JSON.stringify(meta, null, 2),
+		);
 	}
 
 	copyImage(imageBuffer: Buffer): void {
@@ -161,7 +189,10 @@ export class RunLogger {
 			},
 		};
 
-		fs.writeFileSync(path.join(this.runDir, "run.json"), JSON.stringify(summary, null, 2));
+		fs.writeFileSync(
+			path.join(this.runDir, "run.json"),
+			JSON.stringify(summary, null, 2),
+		);
 
 		const indexEntry: IndexEntry = {
 			id: this.id,

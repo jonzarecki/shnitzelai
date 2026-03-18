@@ -20,6 +20,7 @@ export interface Generation {
 	image_provider: string;
 	image_model: string;
 	image_quality: string;
+	tweet_id?: string;
 	created_at: string;
 }
 

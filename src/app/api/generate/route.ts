@@ -1,14 +1,11 @@
-import { NextResponse } from "next/server";
 import { runCuratedPipeline } from "@/lib/ai/pipeline";
 import { getDefaultConfig } from "@/lib/ai/registry";
-import { fetchRssHeadlines } from "@/lib/news/fetcher";
 import { logger } from "@/lib/logger";
+import { fetchRssHeadlines } from "@/lib/news/fetcher";
+import { NextResponse } from "next/server";
 
 /** Full pipeline in one call (used by cron). */
 export async function POST() {
-	if (process.env.READONLY_MODE) {
-		return NextResponse.json({ error: "Generation disabled in readonly mode" }, { status: 403 });
-	}
 	try {
 		const config = getDefaultConfig();
 		const headlines = await fetchRssHeadlines();
@@ -18,7 +15,9 @@ export async function POST() {
 
 		const { preview, result } = await runCuratedPipeline(headlines, config);
 
-		logger.info("[API Generate] Complete", { generationId: result.generation.id });
+		logger.info("[API Generate] Complete", {
+			generationId: result.generation.id,
+		});
 
 		return NextResponse.json({
 			theme: preview.curate.theme,

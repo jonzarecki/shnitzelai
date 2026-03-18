@@ -8,7 +8,9 @@ primary_region = 'iad'
   GENERATED_DIR = '/data/generated'
   NODE_ENV = 'production'
   PORT = '3000'
-  READONLY_MODE = 'true'
+  DISABLE_ADMIN = 'true'
+  LOGS_DIR = '/data/logs'
+  TZ = 'Asia/Jerusalem'
 
 [[mounts]]
   source = 'data'
@@ -32,7 +34,7 @@ primary_region = 'iad'
   strategy = 'immediate'
 
 [[vm]]
-  memory = '256mb'
+  memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256
+  memory_mb = 512

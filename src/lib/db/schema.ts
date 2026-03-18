@@ -36,3 +36,7 @@ export const CREATE_GENERATIONS_CREATED_AT_IDX = `
   CREATE INDEX IF NOT EXISTS idx_generations_created_at
   ON generations(created_at DESC)
 `;
+
+export const ADD_TWEET_ID_COLUMN = `
+  ALTER TABLE generations ADD COLUMN tweet_id TEXT DEFAULT NULL
+`;

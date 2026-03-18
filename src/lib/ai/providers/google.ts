@@ -1,16 +1,16 @@
+import type { RecentPrompt, RecentTopic } from "@/lib/db/queries";
+import { logger } from "@/lib/logger";
+import type { CuratedPick, ImageOptions, SchnitzelContent } from "@/types";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { SchnitzelContent, CuratedPick, ImageOptions } from "@/types";
-import type { RecentTopic, RecentPrompt } from "@/lib/db/queries";
-import type { TextProvider, ImageProvider } from "../types";
 import {
-	SCHNITZEL_SYSTEM_PROMPT,
 	CURATOR_SYSTEM_PROMPT,
 	PROMPT_ENGINEER_SYSTEM_PROMPT,
-	buildUserPrompt,
+	SCHNITZEL_SYSTEM_PROMPT,
 	buildCuratorPrompt,
 	buildPromptEngineerInput,
+	buildUserPrompt,
 } from "../prompts";
-import { logger } from "@/lib/logger";
+import type { ImageProvider, TextProvider } from "../types";
 
 let _client: GoogleGenerativeAI | null = null;
 
@@ -41,11 +41,16 @@ export class GoogleTextProvider implements TextProvider {
 
 		const model = client.getGenerativeModel({
 			model: this.modelId,
-			generationConfig: { responseMimeType: "application/json", temperature: 0.9 },
+			generationConfig: {
+				responseMimeType: "application/json",
+				temperature: 0.9,
+			},
 			systemInstruction: SCHNITZEL_SYSTEM_PROMPT,
 		});
 
-		const result = await model.generateContent(buildUserPrompt(headline, summary));
+		const result = await model.generateContent(
+			buildUserPrompt(headline, summary),
+		);
 		const raw = result.response.text();
 		if (!raw) throw new Error("Google returned empty response");
 
@@ -66,17 +71,25 @@ export class GoogleTextProvider implements TextProvider {
 		recentTopics: RecentTopic[],
 	): Promise<CuratedPick> {
 		const client = getClient();
-		logger.info(`[Google Curator] Curating ${headlines.length} headlines with ${this.modelId}`, {
-			recentTopics: recentTopics.length,
-		});
+		logger.info(
+			`[Google Curator] Curating ${headlines.length} headlines with ${this.modelId}`,
+			{
+				recentTopics: recentTopics.length,
+			},
+		);
 
 		const model = client.getGenerativeModel({
 			model: this.modelId,
-			generationConfig: { responseMimeType: "application/json", temperature: 0.9 },
+			generationConfig: {
+				responseMimeType: "application/json",
+				temperature: 0.9,
+			},
 			systemInstruction: CURATOR_SYSTEM_PROMPT,
 		});
 
-		const result = await model.generateContent(buildCuratorPrompt(headlines, recentTopics));
+		const result = await model.generateContent(
+			buildCuratorPrompt(headlines, recentTopics),
+		);
 		const raw = result.response.text();
 		if (!raw) throw new Error("Google curator returned empty response");
 
@@ -85,7 +98,9 @@ export class GoogleTextProvider implements TextProvider {
 		const theme = parsed.theme ?? "";
 
 		if (!tagline || !theme) {
-			throw new Error(`Google curator response missing required fields: ${raw}`);
+			throw new Error(
+				`Google curator response missing required fields: ${raw}`,
+			);
 		}
 
 		return {
@@ -102,24 +117,35 @@ export class GoogleTextProvider implements TextProvider {
 		recentPrompts: RecentPrompt[],
 	): Promise<{ prompt: string; essence: string }> {
 		const client = getClient();
-		logger.info(`[Google PromptEngineer] Crafting image prompt with ${this.modelId}`, {
-			recentPrompts: recentPrompts.length,
-		});
+		logger.info(
+			`[Google PromptEngineer] Crafting image prompt with ${this.modelId}`,
+			{
+				recentPrompts: recentPrompts.length,
+			},
+		);
 
 		const model = client.getGenerativeModel({
 			model: this.modelId,
-			generationConfig: { responseMimeType: "application/json", temperature: 0.8 },
+			generationConfig: {
+				responseMimeType: "application/json",
+				temperature: 0.8,
+			},
 			systemInstruction: PROMPT_ENGINEER_SYSTEM_PROMPT,
 		});
 
-		const result = await model.generateContent(buildPromptEngineerInput(theme, tagline, recentPrompts));
+		const result = await model.generateContent(
+			buildPromptEngineerInput(theme, tagline, recentPrompts),
+		);
 		const raw = result.response.text()?.trim();
 		if (!raw) throw new Error("Google prompt engineer returned empty response");
 
 		const parsed = JSON.parse(raw) as { prompt: string; essence: string };
-		if (!parsed.prompt) throw new Error(`Prompt engineer missing 'prompt' field: ${raw}`);
+		if (!parsed.prompt)
+			throw new Error(`Prompt engineer missing 'prompt' field: ${raw}`);
 
-		logger.info("[Google PromptEngineer] Crafted prompt", { length: parsed.prompt.length });
+		logger.info("[Google PromptEngineer] Crafted prompt", {
+			length: parsed.prompt.length,
+		});
 		return { prompt: parsed.prompt, essence: parsed.essence ?? "" };
 	}
 }
@@ -137,12 +163,17 @@ export class GoogleImageProvider implements ImageProvider {
 		_options?: ImageOptions,
 	): Promise<Buffer> {
 		const client = getClient();
-		logger.info(`[Google Image] Generating with ${this.modelId}`, { promptLength: prompt.length });
+		logger.info(`[Google Image] Generating with ${this.modelId}`, {
+			promptLength: prompt.length,
+		});
 
 		const model = client.getGenerativeModel({ model: this.modelId });
 		const result = await model.generateContent({
 			contents: [{ role: "user", parts: [{ text: prompt }] }],
-			generationConfig: { responseModalities: ["image", "text"] } as Record<string, unknown>,
+			generationConfig: { responseModalities: ["image", "text"] } as Record<
+				string,
+				unknown
+			>,
 		});
 
 		const parts = result.response.candidates?.[0]?.content?.parts;

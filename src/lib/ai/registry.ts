@@ -1,25 +1,80 @@
-import type { TextProvider, ImageProvider, TextModelDef, ImageModelDef } from "./types";
-import { OpenAITextProvider, OpenAIImageProvider } from "./providers/openai";
-import { GoogleTextProvider, GoogleImageProvider } from "./providers/google";
 import { BflImageProvider } from "./providers/bfl";
+import { GoogleImageProvider, GoogleTextProvider } from "./providers/google";
+import { OpenAIImageProvider, OpenAITextProvider } from "./providers/openai";
+import type {
+	ImageModelDef,
+	ImageProvider,
+	TextModelDef,
+	TextProvider,
+} from "./types";
 
 export const TEXT_MODELS: TextModelDef[] = [
-	{ providerId: "openai", modelId: "gpt-4.1-mini", label: "GPT-4.1 Mini (OpenAI)" },
-	{ providerId: "openai", modelId: "gpt-4.1-nano", label: "GPT-4.1 Nano (OpenAI)" },
-	{ providerId: "google", modelId: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Google)" },
+	{
+		providerId: "openai",
+		modelId: "gpt-4.1-mini",
+		label: "GPT-4.1 Mini (OpenAI)",
+	},
+	{
+		providerId: "openai",
+		modelId: "gpt-4.1-nano",
+		label: "GPT-4.1 Nano (OpenAI)",
+	},
+	{
+		providerId: "google",
+		modelId: "gemini-2.0-flash",
+		label: "Gemini 2.0 Flash (Google)",
+	},
 ];
 
 export const IMAGE_MODELS: ImageModelDef[] = [
-	{ providerId: "openai", modelId: "gpt-image-1.5", label: "GPT Image 1.5 (OpenAI)", supportsQuality: true },
-	{ providerId: "openai", modelId: "gpt-image-1", label: "GPT Image 1 (OpenAI)", supportsQuality: true },
-	{ providerId: "openai", modelId: "gpt-image-1-mini", label: "GPT Image 1 Mini (OpenAI)", supportsQuality: true },
-	{ providerId: "bfl", modelId: "flux-pro-1.1", label: "Flux Pro 1.1 (BFL)", supportsQuality: false },
-	{ providerId: "bfl", modelId: "flux-pro-1.1-ultra", label: "Flux Pro 1.1 Ultra (BFL)", supportsQuality: false },
-	{ providerId: "google", modelId: "imagen-4-fast", label: "Imagen 4 Fast (Google)", supportsQuality: false },
-	{ providerId: "google", modelId: "imagen-4", label: "Imagen 4 (Google)", supportsQuality: false },
+	{
+		providerId: "openai",
+		modelId: "gpt-image-1.5",
+		label: "GPT Image 1.5 (OpenAI)",
+		supportsQuality: true,
+	},
+	{
+		providerId: "openai",
+		modelId: "gpt-image-1",
+		label: "GPT Image 1 (OpenAI)",
+		supportsQuality: true,
+	},
+	{
+		providerId: "openai",
+		modelId: "gpt-image-1-mini",
+		label: "GPT Image 1 Mini (OpenAI)",
+		supportsQuality: true,
+	},
+	{
+		providerId: "bfl",
+		modelId: "flux-pro-1.1",
+		label: "Flux Pro 1.1 (BFL)",
+		supportsQuality: false,
+	},
+	{
+		providerId: "bfl",
+		modelId: "flux-pro-1.1-ultra",
+		label: "Flux Pro 1.1 Ultra (BFL)",
+		supportsQuality: false,
+	},
+	{
+		providerId: "google",
+		modelId: "imagen-4-fast",
+		label: "Imagen 4 Fast (Google)",
+		supportsQuality: false,
+	},
+	{
+		providerId: "google",
+		modelId: "imagen-4",
+		label: "Imagen 4 (Google)",
+		supportsQuality: false,
+	},
 ];
 
-export function createTextProvider(providerId: string, modelId: string): TextProvider {
+export function createTextProvider(
+	providerId: string,
+	modelId: string,
+): TextProvider {
 	switch (providerId) {
 		case "openai":
 			return new OpenAITextProvider(modelId);
@@ -30,7 +85,10 @@ export function createTextProvider(providerId: string, modelId: string): TextPro
 	}
 }
 
-export function createImageProvider(providerId: string, modelId: string): ImageProvider {
+export function createImageProvider(
+	providerId: string,
+	modelId: string,
+): ImageProvider {
 	switch (providerId) {
 		case "openai":
 			return new OpenAIImageProvider(modelId);
@@ -61,6 +119,7 @@ export function getDefaultConfig(): ResolvedConfig {
 		promptEngineerModel: process.env.PROMPT_ENGINEER_MODEL ?? "gpt-5.4",
 		imageProvider: process.env.IMAGE_PROVIDER ?? "openai",
 		imageModel: process.env.IMAGE_MODEL ?? "gpt-image-1.5",
-		imageQuality: (process.env.IMAGE_QUALITY as ResolvedConfig["imageQuality"]) ?? "medium",
+		imageQuality:
+			(process.env.IMAGE_QUALITY as ResolvedConfig["imageQuality"]) ?? "medium",
 	};
 }

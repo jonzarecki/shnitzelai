@@ -1,14 +1,14 @@
-import { describe, it, expect } from "vitest";
-import {
-	createTextProvider,
-	createImageProvider,
-	getDefaultConfig,
-	TEXT_MODELS,
-	IMAGE_MODELS,
-} from "../registry";
-import { OpenAITextProvider, OpenAIImageProvider } from "../providers/openai";
-import { GoogleTextProvider, GoogleImageProvider } from "../providers/google";
+import { describe, expect, it } from "vitest";
 import { BflImageProvider } from "../providers/bfl";
+import { GoogleImageProvider, GoogleTextProvider } from "../providers/google";
+import { OpenAIImageProvider, OpenAITextProvider } from "../providers/openai";
+import {
+	IMAGE_MODELS,
+	TEXT_MODELS,
+	createImageProvider,
+	createTextProvider,
+	getDefaultConfig,
+} from "../registry";
 
 describe("TEXT_MODELS", () => {
 	it("has at least one model defined", () => {
@@ -55,7 +55,9 @@ describe("createTextProvider", () => {
 	});
 
 	it("throws for unknown provider", () => {
-		expect(() => createTextProvider("unknown", "model")).toThrow("Unknown text provider");
+		expect(() => createTextProvider("unknown", "model")).toThrow(
+			"Unknown text provider",
+		);
 	});
 });
 
@@ -76,7 +78,9 @@ describe("createImageProvider", () => {
 	});
 
 	it("throws for unknown provider", () => {
-		expect(() => createImageProvider("unknown", "model")).toThrow("Unknown image provider");
+		expect(() => createImageProvider("unknown", "model")).toThrow(
+			"Unknown image provider",
+		);
 	});
 });
 

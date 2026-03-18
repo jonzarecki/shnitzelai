@@ -1,5 +1,5 @@
-import { getGenerations } from "@/lib/db/queries";
 import { NewsFeed } from "@/components/NewsFeed";
+import { getGenerations } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +12,7 @@ export default function Home() {
 				<h1 className="text-5xl font-black tracking-tight text-amber-400 sm:text-6xl">
 					שניצל.ai
 				</h1>
-				<p className="mt-3 text-lg text-stone-400">
-					שניצל בצורה של החדשות
-				</p>
+				<p className="mt-3 text-lg text-stone-400">שניצל בצורה של החדשות</p>
 			</header>
 			<NewsFeed items={items} />
 		</main>

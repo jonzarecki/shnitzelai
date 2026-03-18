@@ -1,6 +1,7 @@
-import Database from "better-sqlite3";
 import path from "node:path";
+import Database from "better-sqlite3";
 import {
+	ADD_TWEET_ID_COLUMN,
 	CREATE_GENERATIONS_CREATED_AT_IDX,
 	CREATE_GENERATIONS_NEWS_ITEM_IDX,
 	CREATE_GENERATIONS_TABLE,
@@ -12,6 +13,14 @@ const DB_PATH =
 
 let _db: Database.Database | null = null;
 
+function runMigrations(db: Database.Database): void {
+	try {
+		db.exec(ADD_TWEET_ID_COLUMN);
+	} catch {
+		// Column already exists -- idempotent
+	}
+}
+
 function initDb(db: Database.Database): void {
 	db.pragma("journal_mode = WAL");
 	db.pragma("foreign_keys = ON");
@@ -19,6 +28,7 @@ function initDb(db: Database.Database): void {
 	db.exec(CREATE_GENERATIONS_TABLE);
 	db.exec(CREATE_GENERATIONS_NEWS_ITEM_IDX);
 	db.exec(CREATE_GENERATIONS_CREATED_AT_IDX);
+	runMigrations(db);
 }
 
 export function getDb(): Database.Database {

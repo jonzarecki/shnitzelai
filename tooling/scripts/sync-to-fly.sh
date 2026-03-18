@@ -58,6 +58,7 @@ sync_images() {
     flyctl ssh sftp put "$file" "$REMOTE_GENERATED/$filename" -a "$APP_NAME" -q
   done
 
+  flyctl ssh console -a "$APP_NAME" -q -C "chown -R nextjs:nodejs $REMOTE_GENERATED" 2>/dev/null || true
   echo "Done. $to_push images synced."
 }
 
@@ -67,15 +68,37 @@ sync_db() {
     exit 1
   fi
 
-  echo "Checkpointing WAL..."
+  echo "Checkpointing local WAL..."
   sqlite3 "$LOCAL_DB" "PRAGMA wal_checkpoint(TRUNCATE);" 2>/dev/null || true
+
+  tmp_remote=$(mktemp /tmp/remote_shnitzel_XXXXXX.db)
+  trap "rm -f $tmp_remote" EXIT
+
+  echo "Checkpointing remote WAL..."
+  flyctl ssh console -a "$APP_NAME" -q -C "sqlite3 $REMOTE_DB 'PRAGMA wal_checkpoint(TRUNCATE);'" 2>/dev/null || true
+
+  echo "Pulling remote database for merge..."
+  flyctl ssh sftp get "$REMOTE_DB" "$tmp_remote" -a "$APP_NAME" -q 2>/dev/null || true
+
+  if [ -s "$tmp_remote" ]; then
+    echo "Merging remote rows into local first..."
+    sqlite3 "$LOCAL_DB" <<SQL
+ATTACH '$tmp_remote' AS remote;
+INSERT OR IGNORE INTO news_items SELECT * FROM remote.news_items;
+INSERT OR IGNORE INTO generations SELECT * FROM remote.generations;
+DETACH remote;
+SQL
+  fi
 
   echo "Removing old remote DB..."
   flyctl ssh console -a "$APP_NAME" -q -C "rm -f $REMOTE_DB ${REMOTE_DB}-shm ${REMOTE_DB}-wal" 2>/dev/null || true
 
-  echo "Pushing database to remote..."
+  echo "Pushing merged database to remote..."
   flyctl ssh sftp put "$LOCAL_DB" "$REMOTE_DB" -a "$APP_NAME" -q
-  echo "Done. Database synced."
+  flyctl ssh console -a "$APP_NAME" -q -C "chown nextjs:nodejs $REMOTE_DB" 2>/dev/null || true
+  local_count=$(sqlite3 "$LOCAL_DB" "SELECT COUNT(*) FROM generations;")
+  echo "Done. Merged DB has $local_count generations."
+  rm -f "$tmp_remote"
 }
 
 case "${1:-}" in

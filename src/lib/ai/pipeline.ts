@@ -1,15 +1,24 @@
-import type { Generation, NewsInput, CuratedPick } from "@/types";
-import { insertNewsItem, insertGeneration, getRecentTopics, getRecentPrompts } from "@/lib/db/queries";
-import { createTextProvider, createImageProvider, type ResolvedConfig } from "./registry";
+import {
+	getRecentPrompts,
+	getRecentTopics,
+	insertGeneration,
+	insertNewsItem,
+} from "@/lib/db/queries";
+import { logger } from "@/lib/logger";
+import { RunLogger } from "@/lib/logger/run-log";
+import type { CuratedPick, Generation, NewsInput } from "@/types";
 import {
 	CURATOR_SYSTEM_PROMPT,
 	PROMPT_ENGINEER_SYSTEM_PROMPT,
 	buildCuratorPrompt,
 	buildPromptEngineerInput,
 } from "./prompts";
+import {
+	type ResolvedConfig,
+	createImageProvider,
+	createTextProvider,
+} from "./registry";
 import { saveImage } from "./save-image";
-import { logger } from "@/lib/logger";
-import { RunLogger } from "@/lib/logger/run-log";
 
 export interface PreviewResult {
 	curate: CuratedPick;
@@ -46,11 +55,17 @@ export async function runPreview(
 
 	runLog.logHeadlines(headlines, recentTopics);
 
-	const headlinePairs = headlines.map((h) => ({ headline: h.headline, source: h.source }));
+	const headlinePairs = headlines.map((h) => ({
+		headline: h.headline,
+		source: h.source,
+	}));
 	const curatorUserPrompt = buildCuratorPrompt(headlinePairs, recentTopics);
 	runLog.logCurateInput(CURATOR_SYSTEM_PROMPT, curatorUserPrompt);
 
-	const textProvider = createTextProvider(config.textProvider, config.textModel);
+	const textProvider = createTextProvider(
+		config.textProvider,
+		config.textModel,
+	);
 
 	const step1Start = Date.now();
 	let curated: CuratedPick;
@@ -74,17 +89,30 @@ export async function runPreview(
 	});
 
 	const recentPrompts = getRecentPrompts(7);
-	logger.info("[Pipeline] Loaded recent prompts for variation", { count: recentPrompts.length });
+	logger.info("[Pipeline] Loaded recent prompts for variation", {
+		count: recentPrompts.length,
+	});
 
-	const promptInput = buildPromptEngineerInput(curated.theme, curated.tagline, recentPrompts);
+	const promptInput = buildPromptEngineerInput(
+		curated.theme,
+		curated.tagline,
+		recentPrompts,
+	);
 	runLog.logPromptInput(PROMPT_ENGINEER_SYSTEM_PROMPT, promptInput);
 
-	const promptEngineer = createTextProvider(config.promptEngineerProvider, config.promptEngineerModel);
+	const promptEngineer = createTextProvider(
+		config.promptEngineerProvider,
+		config.promptEngineerModel,
+	);
 
 	const step2Start = Date.now();
 	let promptResult: { prompt: string; essence: string };
 	try {
-		promptResult = await promptEngineer.craftImagePrompt(curated.theme, curated.tagline, recentPrompts);
+		promptResult = await promptEngineer.craftImagePrompt(
+			curated.theme,
+			curated.tagline,
+			recentPrompts,
+		);
 	} catch (err) {
 		runLog.finalize({
 			status: "error",
@@ -130,12 +158,12 @@ export async function runGenerate(
 		runId: preview.runLogId,
 	});
 
-	const matchedInput = preview.headlines.find((h) =>
-		curated.theme.includes(h.headline) || h.headline.includes(curated.theme)
-	) ?? {
+	const relatedIdx = curated.relatedHeadlines?.[0];
+	const matchedHeadline = typeof relatedIdx === "number" && relatedIdx > 0 ? preview.headlines[relatedIdx - 1] : undefined;
+	const matchedInput = matchedHeadline ?? {
 		headline: curated.theme,
 		summary: curated.reasoning,
-		source: "Curated",
+		source: "",
 		url: "",
 		category: "general",
 	};
@@ -148,9 +176,13 @@ export async function runGenerate(
 		category: matchedInput.category,
 	});
 
-	const imageProvider = createImageProvider(config.imageProvider, config.imageModel);
+	const imageProvider = createImageProvider(
+		config.imageProvider,
+		config.imageModel,
+	);
 
-	const IMAGE_STYLE_PREFIX = "Editorial illustration, photorealistic detail, dramatic cinematic lighting, muted desaturated palette, magazine cover composition. ";
+	const IMAGE_STYLE_PREFIX =
+		"Editorial illustration, photorealistic detail, dramatic cinematic lighting, muted desaturated palette, magazine cover composition. ";
 	const fullImagePrompt = IMAGE_STYLE_PREFIX + imagePrompt;
 
 	const step3Start = Date.now();
@@ -196,7 +228,9 @@ export async function runGenerate(
 		imagePath,
 	});
 
-	logger.info("[Pipeline] Generation complete", { generationId: generation.id });
+	logger.info("[Pipeline] Generation complete", {
+		generationId: generation.id,
+	});
 
 	return { generation, newsItemId: newsItem.id };
 }

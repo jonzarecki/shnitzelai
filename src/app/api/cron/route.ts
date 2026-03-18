@@ -1,14 +1,11 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { runCronGeneration } from "@/lib/cron/scheduler";
 import { logger } from "@/lib/logger";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
-	if (process.env.READONLY_MODE) {
-		return NextResponse.json({ error: "Cron disabled in readonly mode" }, { status: 403 });
-	}
-
-	const secret = request.headers.get("x-cron-secret") ??
+	const secret =
+		request.headers.get("x-cron-secret") ??
 		new URL(request.url).searchParams.get("secret");
 
 	const expectedSecret = process.env.CRON_SECRET;

@@ -1,0 +1,26 @@
+name: Daily Schnitzel
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 6am UTC = 9am Israel time (UTC+3)
+  workflow_dispatch: {} # allow manual trigger from GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger schnitzel generation
+        run: |
+          response=$(curl -sf -X POST \
+            "https://shnitzelai.fly.dev/api/cron?secret=${{ secrets.CRON_SECRET }}" \
+            --max-time 120 \
+            -w "\n%{http_code}")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+          echo "Response: $body"
+          echo "HTTP status: $http_code"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Cron endpoint returned $http_code"
+            exit 1
+          fi

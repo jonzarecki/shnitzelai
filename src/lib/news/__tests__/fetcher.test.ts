@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseRssXml } from "../fetcher";
 
 const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
@@ -50,7 +50,9 @@ describe("parseRssXml", () => {
 	it("parses multiple items from RSS feed", () => {
 		const items = parseRssXml(SAMPLE_RSS);
 		expect(items).toHaveLength(3);
-		expect(items[0].title).toBe("Trump announces new tariffs on European imports");
+		expect(items[0].title).toBe(
+			"Trump announces new tariffs on European imports",
+		);
 		expect(items[0].source).toBe("Reuters");
 		expect(items[0].link).toContain("news.google.com");
 	});

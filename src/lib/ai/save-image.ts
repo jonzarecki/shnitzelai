@@ -5,8 +5,7 @@ import { monotonicFactory } from "ulid";
 const ulid = monotonicFactory();
 
 const GENERATED_DIR =
-	process.env.GENERATED_DIR ??
-	path.join(process.cwd(), "public", "generated");
+	process.env.GENERATED_DIR ?? path.join(process.cwd(), "public", "generated");
 
 export function saveImage(imageBuffer: Buffer): string {
 	if (!fs.existsSync(GENERATED_DIR)) {

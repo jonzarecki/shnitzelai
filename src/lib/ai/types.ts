@@ -1,5 +1,5 @@
-import type { ImageOptions, SchnitzelContent, CuratedPick } from "@/types";
-import type { RecentTopic, RecentPrompt } from "@/lib/db/queries";
+import type { RecentPrompt, RecentTopic } from "@/lib/db/queries";
+import type { CuratedPick, ImageOptions, SchnitzelContent } from "@/types";
 
 export interface TextProvider {
 	readonly providerId: string;
@@ -22,10 +22,7 @@ export interface TextProvider {
 export interface ImageProvider {
 	readonly providerId: string;
 	readonly modelId: string;
-	generateImage(
-		prompt: string,
-		options?: ImageOptions,
-	): Promise<Buffer>;
+	generateImage(prompt: string, options?: ImageOptions): Promise<Buffer>;
 }
 
 export interface TextModelDef {

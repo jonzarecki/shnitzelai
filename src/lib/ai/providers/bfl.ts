@@ -1,6 +1,6 @@
+import { logger } from "@/lib/logger";
 import type { ImageOptions } from "@/types";
 import type { ImageProvider } from "../types";
-import { logger } from "@/lib/logger";
 
 const BFL_API_BASE = "https://api.bfl.ml/v1";
 
@@ -56,7 +56,9 @@ export class BflImageProvider implements ImageProvider {
 
 		if (!taskResponse.ok) {
 			const errText = await taskResponse.text();
-			throw new Error(`BFL task creation failed (${taskResponse.status}): ${errText}`);
+			throw new Error(
+				`BFL task creation failed (${taskResponse.status}): ${errText}`,
+			);
 		}
 
 		const task = (await taskResponse.json()) as BflTaskResponse;

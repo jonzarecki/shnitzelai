@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { getGenerationCount } from "@/lib/db/queries";
+import { NextResponse } from "next/server";
 
 export async function GET() {
 	try {
