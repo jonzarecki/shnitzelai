@@ -5,7 +5,7 @@ import { fetchRssHeadlines } from "@/lib/news/fetcher";
 import { isTwitterConfigured, postToTwitter } from "@/lib/twitter/client";
 import { Cron } from "croner";
 
-const DEFAULT_SCHEDULE = "0 7,15,23 * * *";
+const DEFAULT_SCHEDULE = "0 9 * * *";
 
 export async function runCronGeneration(): Promise<{
 	success: boolean;
